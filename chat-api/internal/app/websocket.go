@@ -5,17 +5,47 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
+
+	"github.com/gobwas/ws"
+	"github.com/gobwas/ws/wsutil"
 )
 
+func (s *Services) ServeTestWs(pool *websocket.Pool, ctx *gin.Context) {
+	conn, _, _, err := ws.UpgradeHTTP(ctx.Request, ctx.Writer)
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	go func() {
+		defer conn.Close()
+
+		for {
+			msg, op, err := wsutil.ReadClientData(conn)
+
+			if err != nil {
+				fmt.Println(err)
+			}
+
+			err = wsutil.WriteServerMessage(conn, op, msg)
+
+			if err != nil {
+				fmt.Println(err)
+			}
+
+			fmt.Println(msg)
+		}
+	}()
+}
+
 func (s *Services) ServeWs(pool *websocket.Pool, ctx *gin.Context) {
-	authToken := ctx.Request.Header.Get("AuthToken")
+	// authToken := ctx.Request.Header.Get("AuthToken")
 
-	userId, _ := s.jwtTokenService.Parse(authToken)
+	// userId, _ := s.jwtTokenService.Parse(authToken)
 
-	userIdStr := strconv.FormatInt(int64(*userId), 10)
+	// userIdStr := strconv.FormatInt(int64(*userId), 10)
 
 	wsConn, err := websocket.Upgrade(ctx.Writer, ctx.Request)
 
@@ -24,7 +54,7 @@ func (s *Services) ServeWs(pool *websocket.Pool, ctx *gin.Context) {
 	}
 
 	client := &websocket.Client{
-		ID:   userIdStr,
+		ID:   "asd",
 		Conn: wsConn,
 		Pool: pool,
 	}
@@ -44,7 +74,7 @@ func (s *Services) ServeWs(pool *websocket.Pool, ctx *gin.Context) {
 		result := make(map[string]interface{})
 		json.Unmarshal([]byte(p), &result)
 
-		message := websocket.Message{UserID: userIdStr, Body: result}
+		message := websocket.Message{UserID: "asd", Body: result}
 
 		go s.ProcessMessage(message)
 	}

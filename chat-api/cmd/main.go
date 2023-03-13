@@ -72,5 +72,9 @@ func main() {
 		services.ServeWs(pool, ctx)
 	})
 
+	router.GET("ws/test/", func(ctx *gin.Context) {
+		services.ServeTestWs(pool, ctx)
+	})
+
 	router.Run()
 }
